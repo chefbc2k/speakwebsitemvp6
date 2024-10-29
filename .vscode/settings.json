@@ -1,0 +1,13 @@
+{
+    "cSpell.words": [
+        "voicesecondarylanguages"
+    ],
+    "deno.enable": false,
+    "deno.lint": true,
+    "deno.unstable": true,
+    "deno.path": "/Users/chefb/.deno/bin/deno",
+    "deno.enablePaths": [
+        "supabase",
+        "supabase/functions"
+    ]
+}

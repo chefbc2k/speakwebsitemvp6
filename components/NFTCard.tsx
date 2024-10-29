@@ -80,7 +80,7 @@ export default function NFTCard({ nft }: NFTCardProps) {
           <div className="space-y-2">
             <p className="text-sm">Artist: {nft.artist}</p>
             <p className="text-sm">Region: {nft.region}</p>
-            <p className="text-sm font-mono text-xs">Contract: {nft.contract}</p>
+            <p className="text-sm font-mono">Contract: {nft.contract}</p>
             <div className="flex justify-between items-center">
               <span className="font-bold">{nft.price} ETH</span>
               <Button variant="outline" size="sm">

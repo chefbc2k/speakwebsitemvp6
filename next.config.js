@@ -4,8 +4,14 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  images: { unoptimized: true },
-  reactStrictMode: false,
+  images: { 
+    unoptimized: false,
+    domains: [
+      'picsum.photos',
+      'images.unsplash.com'
+    ]
+  },
+  reactStrictMode: true,
   webpack: (config) => {
     config.externals.push("pino-pretty", "lokijs", "encoding");
     return config;
