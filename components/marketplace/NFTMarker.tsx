@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from "@/components/ui/button";
 import { MapPin, Music2 } from 'lucide-react';
-import type { NFTLocation } from '@/types/marketplace';
+import type { NFTLocation } from '@/lib/map-data-utils';
 import { Marker, Popup } from 'react-map-gl';
 
 interface NFTMarkerProps {

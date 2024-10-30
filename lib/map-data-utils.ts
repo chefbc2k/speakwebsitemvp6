@@ -4,6 +4,7 @@ import { ReactNode } from 'react';
 import { MAP_THEME } from './map-config';
 import { useQuery } from '@tanstack/react-query';
 import { useUser } from '@supabase/auth-helpers-react';
+import { types } from 'util';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -197,6 +198,20 @@ const applyFilterConditions = <T extends ValidTableName>(
 export const getVisibleTables = (isAuthenticated: boolean): TableConfig[] => {
   return TABLES_TO_FETCH.filter(table => table.isPublic || isAuthenticated);
 };
+
+// Add this type definition after the imports and before other type definitions
+export interface NFTLocation {
+  latitude: number;
+  longitude: number;
+  image: string;
+  title: string;
+  artist: string;
+  voiceType: string;
+  language: string;
+  voiceStyle: string;
+  rating: number;
+  price: number;
+}
 
 // Add the React Query hook at the bottom of the file
 export function useMapData() {

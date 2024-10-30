@@ -20,10 +20,7 @@ const MarketplaceMap: React.FC = () => {
     if (!mapData) {
       return [];
     }
-
-    const userAuthenticated = !!user;
-    const dataToFilter = userAuthenticated ? mapData : mapData.filter(item => !item.private);
-
+    const dataToFilter = user ? mapData : mapData.filter(item => !item.private);
     return selectedSources.length === 0
       ? dataToFilter
       : dataToFilter.filter(item => selectedSources.includes(item.tableSource));
@@ -39,32 +36,7 @@ const MarketplaceMap: React.FC = () => {
   if (error) return <div>Error loading map data: {(error as Error).message}</div>;
 
   return (
-    <div className="relative w-full h-full overflow-hidden">
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-50">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      )}
-      {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-50">
-          <div className="bg-destructive text-destructive-foreground p-4 rounded-md">
-            {(error as Error).message}
-          </div>
-        </div>
-      )}
-
-      <FilterSidebar
-        tableSources={TABLES_TO_FETCH.map((table) => ({
-          name: table.label,
-          value: table.tableName,
-        }))}
-        selectedSources={selectedSources}
-        onFilterChange={handleFilterChange}
-        onClose={() => setShowSidebar(false)}
-        showSidebar={showSidebar}
-      />
-
-      {/* Visualization Container */}
+    <div className="relative w-full h-screen overflow-hidden">
       <div className="flex h-full w-full overflow-hidden">
         <div className="w-1/2 h-full">
           <Globe mapData={filteredData} />

@@ -1,5 +1,4 @@
 // src/lib/map-config.ts
-import { TableConfig, TABLES_TO_FETCH } from './map-data-utils';
 
 // Initial View State for the Map
 export const INITIAL_VIEW_STATE = {
@@ -29,37 +28,36 @@ export const MAP_THEME = {
     markerColor: '#1e293b',
   },
 } as const;
-// Helper function to get visible tables
-export const getVisibleTables = (isAuthenticated: boolean, tablesToFetch?: TableConfig[]): TableConfig[] => {
-  const defaultTables: TableConfig[] = [
-    {
-      tableName: 'users',
-      displayFields: ['user_id', 'username', 'geo_location', 'created_at'],
-      label: 'Voice Artists',
-      markerColor: MAP_THEME.light.markerColor,
-      isPublic: true,
-      latitude: 0,
-      longitude: 0
-    },
-    {
-      tableName: 'uservoicetraits',
-      displayFields: ['user_id', 'voice_trait_id'],
-      label: 'Voice Traits',
-      markerColor: MAP_THEME.dark.markerColor,
-      isPublic: true,
-      latitude: 0,
-      longitude: 0
-    },
-    {
-      tableName: 'usertimezones',
-      displayFields: ['user_id', 'time_zone_id'],
-      label: 'Timezones',
-      markerColor: '#44FF44',
-      isPublic: true,
-      latitude: 0,
-      longitude: 0
-    },
-  ];
 
-  return TABLES_TO_FETCH.filter(table => table.isPublic || isAuthenticated);
-};
+// Define table visibility configuration
+export interface TableConfig {
+  id: string;
+  visible: boolean;
+  label: string;
+  color?: string;
+  locationColumn?: string; // Column containing location data
+}
+
+// Default table configurations based on your Supabase schema
+export const TABLE_CONFIGS: Record<string, TableConfig> = {
+  listings: {
+    id: 'listings',
+    visible: true,
+    label: 'Voice NFT Listings',
+    color: '#2563eb',
+    // Note: You'll need to add a location column to your listings table
+  },
+  users: {
+    id: 'users',
+    visible: true,
+    label: 'Voice Artists',
+    color: '#10b981',
+    // Note: You'll need to add location columns to your users table
+  }
+} as const;
+
+export function getVisibleTables(p0: boolean): string[] {
+  return Object.values(TABLE_CONFIGS)
+    .filter(config => config.visible)
+    .map(config => config.id);
+}

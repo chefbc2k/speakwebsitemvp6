@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
-import { getToken } from 'next-auth/jwt';
+import { NextRequest, NextResponse } from 'next/server';
 import { Web3Storage } from 'web3.storage';
 import { rateLimit } from '@/lib/rate-limit';
+import { createClient } from '@/utils/supabase/server';
+import { cookies } from 'next/headers';
 
 const client = new Web3Storage({ token: process.env.WEB3_STORAGE_TOKEN! });
 
@@ -10,12 +11,16 @@ const limiter = rateLimit({
   uniqueTokenPerInterval: 100,
 });
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     await limiter.check(req, 3); // 3 uploads per minute
 
-    const token = await getToken({ req });
-    if (!token) {
+    // Check Supabase auth
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
+    const { data: { session }, error } = await supabase.auth.getSession();
+
+    if (error || !session) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 

@@ -1,8 +1,9 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { type NextRequest } from "next/server";
+import { withAuth } from "next-auth/middleware";
+import { type NextRequest, NextResponse } from "next/server";
 
+// Existing Supabase middleware
 export const createClient = (request: NextRequest) => {
-  // Create a response to modify cookies on
   const response = new Response(null, { headers: request.headers });
 
   const supabase = createServerClient(
@@ -23,4 +24,15 @@ export const createClient = (request: NextRequest) => {
   );
 
   return response;
+};
+
+// Add NextAuth middleware
+export default withAuth;
+
+// Configure protected routes
+export const config = {
+  matcher: [
+    "/api/upload/:path*",
+    // Add other protected routes here
+  ]
 };
