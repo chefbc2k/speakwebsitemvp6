@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Users, Image, DollarSign, AlertCircle } from 'lucide-react';
-import { withAuth } from '@/components/withAuth';
+import { withAuth } from '@/components/auth/withAuth';
 
 const data = [
   { name: 'Jan', revenue: 4000 },

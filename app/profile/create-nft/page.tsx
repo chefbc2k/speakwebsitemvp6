@@ -13,7 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Wallet, CreditCard, Loader2, RefreshCw, Play, Pause } from 'lucide-react';
-import { withAuth } from '@/components/withAuth';
+import { withAuth } from '@/components/auth/withAuth';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 

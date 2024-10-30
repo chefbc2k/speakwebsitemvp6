@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { withAuth } from '@/components/withAuth';
+import { withAuth } from '@/components/auth/withAuth';
 import { useAuth } from '@/contexts/AuthContext';
 
 const PersonalInformation = () => {
