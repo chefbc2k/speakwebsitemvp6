@@ -16,27 +16,22 @@ const MarketplaceMap: React.FC = () => {
 
   const { data: mapData, isLoading, error } = useMapData();
 
-  // Filter data based on selected sources using useMemo
   const filteredData = useMemo(() => {
     if (!mapData) {
       return [];
     }
-    
-    // Example: Only show certain data if user is authenticated
+
     const userAuthenticated = !!user;
     const dataToFilter = userAuthenticated ? mapData : mapData.filter(item => !item.private);
-    
+
     return selectedSources.length === 0
       ? dataToFilter
       : dataToFilter.filter(item => selectedSources.includes(item.tableSource));
   }, [mapData, selectedSources, user]);
 
-  // Handle filter changes
   const handleFilterChange = (tableName: string) => {
     setSelectedSources((prev) =>
-      prev.includes(tableName)
-        ? prev.filter((name) => name !== tableName)
-        : [...prev, tableName]
+      prev.includes(tableName) ? prev.filter((name) => name !== tableName) : [...prev, tableName]
     );
   };
 
@@ -44,8 +39,7 @@ const MarketplaceMap: React.FC = () => {
   if (error) return <div>Error loading map data: {(error as Error).message}</div>;
 
   return (
-    <div className="relative w-full h-full">
-      {/* Loading and Error States */}
+    <div className="relative w-full h-full overflow-hidden">
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-50">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -59,11 +53,10 @@ const MarketplaceMap: React.FC = () => {
         </div>
       )}
 
-      {/* Filters */}
       <FilterSidebar
         tableSources={TABLES_TO_FETCH.map((table) => ({
           name: table.label,
-          value: table.tableName
+          value: table.tableName,
         }))}
         selectedSources={selectedSources}
         onFilterChange={handleFilterChange}
@@ -72,16 +65,14 @@ const MarketplaceMap: React.FC = () => {
       />
 
       {/* Visualization Container */}
-      <div className="flex h-full">
-        {/* Globe Container */}
+      <div className="flex h-full w-full overflow-hidden">
         <div className="w-1/2 h-full">
           <Globe mapData={filteredData} />
         </div>
 
-        {/* Map Container */}
         <div className="w-1/2 h-full">
-          <Map 
-            className="h-full"
+          <Map
+            className="h-full w-full"
             initialView={[0, 0]}
             initialZoom={2}
             mapData={filteredData}
