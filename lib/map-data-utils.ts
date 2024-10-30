@@ -1,63 +1,179 @@
-// src/lib/MapDataUtilities.ts
-
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { TABLES_TO_FETCH, type TableConfig } from './map-config';
+import { createClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/supabase';
 import { ReactNode } from 'react';
+import { MAP_THEME } from './map-config';
 
-// Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
-/**
- * Represents the processed data for each map marker.
- */
+type Tables = Database['public']['Tables'];
+type TableNames = keyof Tables;
+
+// Helper type to get row type for a specific table
+type TableRow<T extends TableNames> = Tables[T]['Row'];
+
+// Define a union type of the specific tables we're using
+type ValidTables = 'users' | 'uservoicetraits' | 'usertimezones';
+
+// Create a type for each specific table configuration
+type TableConfigMap = {
+  users: {
+    tableName: 'users';
+    displayFields: Array<keyof Tables['users']['Row']>;
+    label: string;
+    markerColor: string;
+    isPublic: boolean;
+  };
+  uservoicetraits: {
+    tableName: 'uservoicetraits';
+    displayFields: Array<keyof Tables['uservoicetraits']['Row']>;
+    label: string;
+    markerColor: string;
+    isPublic: boolean;
+  };
+  usertimezones: {
+    tableName: 'usertimezones';
+    displayFields: Array<keyof Tables['usertimezones']['Row']>;
+    label: string;
+    markerColor: string;
+    isPublic: boolean;
+  };
+};
+
+// Union type of all possible table configurations
+export type TableConfig = TableConfigMap[ValidTables];
+
+// Define tables with proper typing
+export const TABLES_TO_FETCH: readonly TableConfig[] = [
+  {
+    tableName: 'users',
+    displayFields: ['user_id', 'username', 'geo_location', 'created_at'],
+    label: 'Voice Artists',
+    markerColor: MAP_THEME.light.markerColor,
+    isPublic: true,
+  },
+  {
+    tableName: 'uservoicetraits',
+    displayFields: ['user_id', 'voice_trait_id'],
+    label: 'Voice Traits',
+    markerColor: MAP_THEME.dark.markerColor,
+    isPublic: true,
+  },
+  {
+    tableName: 'usertimezones',
+    displayFields: ['user_id', 'time_zone_id'],
+    label: 'Timezones',
+    markerColor: '#44FF44',
+    isPublic: true,
+  },
+] as const;
+
+// Define the type for joined user data
+type JoinedUserData = {
+  user_id: string;
+  username: string | null;
+  geo_location: string | null;
+  created_at: string;
+  uservoicetraits?: Array<{
+    voice_trait_id: string;
+    voicetraits: {
+      name: string;
+    };
+  }>;
+  usertimezones?: Array<{
+    time_zone_id: string;
+    timezones: {
+      name: string;
+    };
+  }>;
+};
+
 export interface MapData {
   latitude: number;
   longitude: number;
-  rawData: Record<string, any>;
-  tableSource: string;
+  rawData: JoinedUserData;
+  tableSource: TableNames;
   markerColor: string;
-  popupContent?: ReactNode; // Optional popup content as ReactNode
-  [x: string]: ReactNode | number | string | Record<string, any> | undefined; // Updated index signature
+  label: string;
+  popupContent?: ReactNode;
+  properties: {
+    userId: string;
+    username: string;
+    geoLocation: string | null;
+    createdAt: string;
+    voiceTraits?: string[];
+    timezone?: string;
+  };
 }
 
-/**
- * Fetches data from the specified tables and processes it into MapData format.
- * @param tables - Array of table configurations to fetch data from.
- * @returns A promise that resolves to an array of MapData.
- */
 export const fetchTableData = async (tables: TableConfig[]): Promise<MapData[]> => {
   const allMapData: MapData[] = [];
 
   for (const table of tables) {
-    const { tableName, displayFields, markerColor, label, filterConditions } = table;
+    const { tableName, displayFields, markerColor, label } = table;
 
     try {
-      let query = supabase.from(tableName).select(displayFields.join(', '));
+      const { data, error } = await supabase
+        .from('users')
+        .select(`
+          user_id,
+          username,
+          geo_location,
+          created_at,
+          uservoicetraits (
+            voice_trait_id,
+            voicetraits (
+              name
+            )
+          ),
+          usertimezones (
+            time_zone_id,
+            timezones (
+              name
+            )
+          )
+        `) as { data: Array<{
+          user_id: string;
+          username: string | null;
+          geo_location: string | null;
+          created_at: string;
+          uservoicetraits: Array<{
+            voice_trait_id: string;
+            voicetraits: {
+              name: string;
+            };
+          }>;
+          usertimezones: Array<{
+            time_zone_id: string;
+            timezones: {
+              name: string;
+            };
+          }>;
+        }> | null; error: any };
 
-      if (filterConditions) {
-        query = applyFilterConditions(query, filterConditions);
-      }
-
-      const { data, error } = await query;
       if (error) {
-        throw new Error(`Error fetching data from ${tableName}: ${error.message}`);
+        throw error;
       }
-
       if (!data) {
-        console.warn(`No data found in table ${tableName}`);
         continue;
       }
 
-      // Process the data into MapData format
-      const processedData = data.map((item: any) => ({
-        latitude: item.latitude,
-        longitude: item.longitude,
+      const processedData = data.map((item) => ({
+        latitude: parseFloat(item.geo_location?.split(',')[0] || '0'),
+        longitude: parseFloat(item.geo_location?.split(',')[1] || '0'),
         rawData: item,
         tableSource: tableName,
         markerColor,
-        label
+        label,
+        properties: {
+          userId: item.user_id,
+          username: item.username || '',
+          geoLocation: item.geo_location,
+          createdAt: item.created_at,
+          voiceTraits: item.uservoicetraits?.map(vt => vt.voicetraits.name) || [],
+          timezone: item.usertimezones?.[0]?.timezones.name
+        }
       }));
 
       allMapData.push(...processedData);
@@ -69,19 +185,17 @@ export const fetchTableData = async (tables: TableConfig[]): Promise<MapData[]> 
   return allMapData;
 };
 
-/**
- * Applies filter conditions to a Supabase query.
- * @param query - The Supabase query builder.
- * @param conditions - An object representing filter conditions.
- * @returns The modified query with applied filters.
- */
-const applyFilterConditions = (
+const applyFilterConditions = <T extends TableNames>(
   query: any,
-  conditions: Record<string, any>
+  conditions: Partial<Tables[T]['Row']>
 ) => {
   let modifiedQuery = query;
   for (const [key, value] of Object.entries(conditions)) {
     modifiedQuery = modifiedQuery.eq(key, value);
   }
   return modifiedQuery;
+};
+
+export const getVisibleTables = (isAuthenticated: boolean): TableConfig[] => {
+  return TABLES_TO_FETCH.filter(table => isAuthenticated || table.isPublic);
 };

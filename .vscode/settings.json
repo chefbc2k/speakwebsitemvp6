@@ -10,5 +10,15 @@
     "deno.enablePaths": [
         "supabase",
         "supabase/functions"
-    ]
+    ],
+    "files.associations": {
+        "*.css": "tailwindcss"
+    },
+    "editor.quickSuggestions": {
+        "strings": true
+    },
+    "tailwindCSS.includeLanguages": {
+        "plaintext": "html"
+    },
+    "css.validate": false
 }

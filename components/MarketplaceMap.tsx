@@ -1,75 +1,85 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Map, { Marker, Popup } from 'react-map-gl';
-import { fetchTableData, type MapData } from '@/lib/map-data-utils'; // Data utility import
-import { useTheme } from 'next-themes';
-import { Mic } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { INITIAL_VIEW_STATE, MAPBOX_TOKEN, MAP_STYLE, MAP_THEME, getVisibleTables } from '@/lib/map-config'; // Config imports
+import React, { useState, useEffect, useMemo } from 'react';
+import Globe from '@/components/marketplace/Globe';
+import FilterSidebar from '@/components/marketplace/FilterSidebar';
+import { fetchTableData, MapData, TABLES_TO_FETCH, TableConfig } from '@/lib/map-data-utils';
+import { getVisibleTables } from '@/lib/map-config';
+import { useUser } from '@supabase/auth-helpers-react';
 
-export default function MarketplaceMap({ isAuthenticated }: { isAuthenticated: boolean }) {
-  const [locations, setLocations] = useState<MapData[]>([]);
-  const [selectedLocation, setSelectedLocation] = useState<MapData | null>(null);
-  const { theme } = useTheme();
-  const currentTheme = MAP_THEME[theme as keyof typeof MAP_THEME] || MAP_THEME.light;
+const MarketplaceMap: React.FC = () => {
+  const [mapData, setMapData] = useState<MapData[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedSources, setSelectedSources] = useState<string[]>([]);
+  const [showSidebar, setShowSidebar] = useState(true);
+  const user = useUser();
 
   useEffect(() => {
-    async function loadLocations() {
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        const tables = getVisibleTables(isAuthenticated); // Get visible tables based on auth
-        const data = await fetchTableData(tables); // Fetch data from these tables
-        setLocations(data);
-      } catch (error) {
-        console.error('Error loading map data:', error);
+        const tables = getVisibleTables(!!user);
+        const data = await fetchTableData(tables);
+        setMapData(data);
+      } catch (err) {
+        console.error('Error loading map data:', err);
+        setError('Failed to load map data.');
+      } finally {
+        setLoading(false);
       }
-    }
+    };
 
-    loadLocations();
-  }, [isAuthenticated]);
+    loadData();
+  }, [user]);
+
+  // Handle filter changes
+  const handleFilterChange = (tableName: string) => {
+    setSelectedSources((prev) =>
+      prev.includes(tableName)
+        ? prev.filter((name) => name !== tableName)
+        : [...prev, tableName]
+    );
+  };
+
+  // Filtered data based on selected sources
+  const filteredData = useMemo(() => {
+    if (selectedSources.length === 0) {
+      return mapData;
+    }
+    return mapData.filter((data) => selectedSources.includes(data.tableSource));
+  }, [mapData, selectedSources]);
 
   return (
-    <div className="w-full h-[400px] rounded-lg overflow-hidden">
-      <Map
-        mapboxAccessToken={MAPBOX_TOKEN}
-        initialViewState={INITIAL_VIEW_STATE}
-        style={{ width: '100%', height: '100%' }}
-        mapStyle={MAP_STYLE}
-      >
-        {locations.map((location, index) => (
-          <Marker
-            key={`${location.latitude}-${location.longitude}-${index}`}
-            latitude={location.latitude}
-            longitude={location.longitude}
-            onClick={(e) => {
-              e.originalEvent.stopPropagation();
-              setSelectedLocation(location);
-            }}
-          >
-            <Mic className="w-6 h-6 text-primary cursor-pointer" />
-          </Marker>
-        ))}
+    <div className="relative w-full h-full">
+      {/* Loading and Error States */}
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-50">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      )}
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-50">
+          <div className="bg-destructive text-destructive-foreground p-4 rounded-md">
+            {error}
+          </div>
+        </div>
+      )}
 
-        {selectedLocation && !('error' in selectedLocation.rawData) && (
-          <Popup
-            latitude={selectedLocation.latitude}
-            longitude={selectedLocation.longitude}
-            onClose={() => setSelectedLocation(null)}
-            closeButton={true}
-            closeOnClick={false}
-            className="bg-background"
-          >
-            <div className="p-2">
-              <h3 className="font-semibold">{selectedLocation.popupContent}</h3>
-              {'accuracy' in selectedLocation.rawData && selectedLocation.rawData.accuracy && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  Accuracy: {selectedLocation.rawData.accuracy}m
-                </p>
-              )}
-            </div>
-          </Popup>
-        )}
-      </Map>
+      {/* Filters */}
+      <FilterSidebar
+        tableSources={TABLES_TO_FETCH}
+        selectedSources={selectedSources}
+        onFilterChange={handleFilterChange}
+        onClose={() => setShowSidebar(false)}
+        showSidebar={showSidebar}
+      />
+
+      {/* Globe */}
+      <Globe mapData={filteredData} />
     </div>
   );
-}
+};
+
+export default MarketplaceMap;
