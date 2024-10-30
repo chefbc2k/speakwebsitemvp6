@@ -58,7 +58,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       const response = await fetch(`/api/users/${walletAddress}`);
-      if (!response.ok) throw new Error('Failed to fetch user profile');
+      if (!response.ok) {
+        throw new Error('Failed to fetch user profile');
+      }
       const data = await response.json();
       setUser(data);
     } catch (err) {
@@ -98,7 +100,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   const updateProfile = async (data: Partial<UserProfile>) => {
     try {
-      if (!address) throw new Error('No wallet connected');
+      if (!address) {
+        throw new Error('No wallet connected');
+      }
       
       const response = await fetch(`/api/users/${address}`, {
         method: 'PATCH',
@@ -108,7 +112,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify(data),
       });
 
-      if (!response.ok) throw new Error('Failed to update profile');
+      if (!response.ok) {
+        throw new Error('Failed to update profile');
+      }
       
       const updatedProfile = await response.json();
       setUser(updatedProfile);
@@ -128,7 +134,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         body: formData,
       });
 
-      if (!response.ok) throw new Error('Failed to upload avatar');
+      if (!response.ok) {
+        throw new Error('Failed to upload avatar');
+      }
       
       const { url } = await response.json();
       await updateProfile({ avatar: url });
