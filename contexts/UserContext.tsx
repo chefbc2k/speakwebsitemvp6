@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { useAddress, useConnectionStatus, useDisconnect, useLogin, useLogout, useUser as useThirdwebUser } from "@thirdweb-dev/react";
 import { useRouter } from 'next/navigation';
 
-interface UserProfile {
+export interface UserProfile {
   id: string;
   address: string;
   name: string;

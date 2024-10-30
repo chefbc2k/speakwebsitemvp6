@@ -1,27 +1,30 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { type MapData } from '@/lib/map-data-utils';
+import { TableConfig, type MapData } from '@/lib/map-data-utils';
 import { getVisibleTables } from '@/lib/map-config';
 import { useUser } from '@supabase/auth-helpers-react';
-
+import { MouseEvent } from 'react'; 
 interface MapProps {
   className?: string;
   initialView?: [number, number];
   initialZoom?: number;
+  mapData: MapData[];
 }
 
 const MapComponent = ({
   className = '',
   initialView = [0, 0],
-  initialZoom = 2
+  initialZoom = 2,
+  mapData
 }: MapProps) => {
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
-  const [mapData, setMapData] = useState<MapData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const user = useUser();
+
+  const visibleTables = getVisibleTables(!!user);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -41,30 +44,13 @@ const MapComponent = ({
       markersRef.current = L.layerGroup().addTo(map);
     }
 
-    loadMapData();
-
     return () => {
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
       }
     };
-  }, [user]);
-
-  const loadMapData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const tables = getVisibleTables(!!user);
-      const data = await getTableConfig(tables);
-      setMapData(data as unknown as MapData[]); // Type assertion to fix void error
-    } catch (error) {
-      console.error('Error loading map data:', error);
-      setError('Failed to load map data.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, []);
 
   useEffect(() => {
     if (!mapRef.current || !markersRef.current) {
@@ -75,7 +61,10 @@ const MapComponent = ({
 
     mapData.forEach((point) => {
       if ('error' in point.rawData) {
-        setError(point.rawData.error);
+        const errorMessage = typeof point.rawData.error === 'string' 
+          ? point.rawData.error 
+          : 'An unknown error occurred';
+        setError(errorMessage);
         return;
       }
 
@@ -105,7 +94,11 @@ const MapComponent = ({
       const bounds = L.latLngBounds(mapData.map((item) => [item.latitude, item.longitude]));
       mapRef.current?.fitBounds(bounds, { padding: [50, 50] });
     }
-  }, [mapData, error]);
+  }, [mapData]);
+
+  function loadMapData(event: MouseEvent<HTMLButtonElement>): void {
+    throw new Error('Function not implemented.');
+  }
 
   return (
     <div className={`map-container ${className}`}>
@@ -141,16 +134,36 @@ const MapComponent = ({
 };
 
 function createCustomIcon(color: string) {
+  // Map color names to CSS variables
+  const colorMap: { [key: string]: string } = {
+    primary: 'var(--primary)',
+    secondary: 'var(--secondary)',
+    accent: 'var(--accent)',
+    muted: 'var(--muted)'
+  };
+
+  // Get the CSS variable or use the passed color
+  const backgroundColor = colorMap[color] ? `hsl(${colorMap[color]})` : color;
+
   return L.divIcon({
     className: 'custom-marker',
-    html: `<div class="w-6 h-6 rounded-full border-2 border-white shadow-lg" style="background-color: ${color}"></div>`,
+    html: `
+      <div 
+        class="w-6 h-6 rounded-full border-2 shadow-lg transition-all duration-200" 
+        style="
+          background-color: ${backgroundColor};
+          border-color: hsl(var(--background));
+          box-shadow: 0 2px 4px hsl(var(--muted));
+        "
+      ></div>
+    `,
     iconSize: [24, 24],
     iconAnchor: [12, 12],
   });
 }
 
-export default MapComponent;
-function getTableConfig(tables: import("@/lib/map-config").TableConfig[]) {
+export function getTableConfig(tables: TableConfig[]): void {
   throw new Error('Function not implemented.');
 }
 
+export default MapComponent;

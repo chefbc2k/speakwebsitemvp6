@@ -2,6 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
 import { ReactNode } from 'react';
 import { MAP_THEME } from './map-config';
+import { useQuery } from '@tanstack/react-query';
+import { useUser } from '@supabase/auth-helpers-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -184,3 +186,17 @@ const applyFilterConditions = <T extends ValidTableName>(
 export const getVisibleTables = (isAuthenticated: boolean): TableConfig[] => {
   return TABLES_TO_FETCH.filter(table => table.isPublic || isAuthenticated);
 };
+
+// Add the React Query hook at the bottom of the file
+export function useMapData() {
+  const user = useUser();
+
+  return useQuery({
+    queryKey: ['mapData', !!user],
+    queryFn: async () => {
+      const tables = getVisibleTables(!!user);
+      return fetchTableData(tables);
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}

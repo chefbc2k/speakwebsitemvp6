@@ -1,7 +1,6 @@
 'use client';
-
 import { useState } from 'react';
-import { useUser } from '@/contexts/UserContext';
+import { useUser } from '@supabase/auth-helpers-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,19 +14,23 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Icons } from '@/components/ui/icons';
 import { useToast } from '@/hooks/use-toast';
+import { useUpdateProfile } from '@/hooks/queries/useUpdateProfile';
+import { useAuth } from '@/contexts/AuthContext';
+import { Icons } from '../ui/icons';
 
 export default function ProfileForm() {
-  const { user, updateProfile, uploadAvatar } = useUser();
-  const [isLoading, setIsLoading] = useState(false);
+  const user = useUser();
+  const { address } = useAuth();
   const { toast } = useToast();
+  const updateProfile = useUpdateProfile(address!);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: user?.name || '',
-    bio: user?.bio || '',
+    name: user?.user_metadata?.name || '',
+    bio: user?.user_metadata?.bio || '',
     email: user?.email || '',
-    preferences: user?.preferences || {
+    preferences: user?.user_metadata?.preferences || {
       theme: 'system' as const,
       notifications: true,
       privacy: 'public' as const,
@@ -36,7 +39,9 @@ export default function ProfileForm() {
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -59,8 +64,7 @@ export default function ProfileForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      setIsLoading(true);
-      await updateProfile(formData);
+      await updateProfile.mutateAsync(formData);
       toast({
         title: 'Success',
         description: 'Profile updated successfully!',
@@ -71,8 +75,6 @@ export default function ProfileForm() {
         description: 'Failed to update profile.',
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -80,9 +82,9 @@ export default function ProfileForm() {
     <form onSubmit={handleSubmit} className="space-y-8">
       <div className="flex items-center space-x-4">
         <Avatar className="h-24 w-24">
-          <AvatarImage src={user?.avatar} />
+          <AvatarImage src={user?.user_metadata?.avatar_url} />
           <AvatarFallback>
-            {user?.name?.charAt(0) || user?.address?.charAt(0)}
+            {user?.user_metadata?.name?.charAt(0) || address?.charAt(0)}
           </AvatarFallback>
         </Avatar>
         <div>
@@ -194,8 +196,8 @@ export default function ProfileForm() {
         </div>
       </div>
 
-      <Button type="submit" disabled={isLoading}>
-        {isLoading ? (
+      <Button type="submit" disabled={updateProfile.isPending}>
+        {updateProfile.isPending ? (
           <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
         ) : (
           <Icons.save className="mr-2 h-4 w-4" />
@@ -204,4 +206,8 @@ export default function ProfileForm() {
       </Button>
     </form>
   );
+}
+
+function uploadAvatar(file: File) {
+  throw new Error('Function not implemented.');
 }

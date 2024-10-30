@@ -1,46 +1,35 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import Globe from '@/components/marketplace/Globe';
+import Map from '@/components/marketplace/Map';
 import FilterSidebar from '@/components/marketplace/FilterSidebar';
-import { fetchTableData, MapData, TABLES_TO_FETCH, TableConfig } from '@/lib/map-data-utils';
 import { getVisibleTables } from '@/lib/map-config';
 import { useUser } from '@supabase/auth-helpers-react';
+import { useMapData } from '@/lib/map-data-utils';
+import { TABLES_TO_FETCH } from '@/lib/map-data-utils';
 
 const MarketplaceMap: React.FC = () => {
-  const [mapData, setMapData] = useState<MapData[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const user = useUser();
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [showSidebar, setShowSidebar] = useState(true);
-  const user = useUser();
 
-  // Transform TableConfig[] to FilterOption[]
-  const filterOptions = useMemo(() => {
-    return TABLES_TO_FETCH.map((table) => ({
-      name: table.label,
-      value: table.tableName
-    }));
-  }, []);
+  const { data: mapData, isLoading, error } = useMapData();
 
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const tables = getVisibleTables(!!user);
-        const data = await fetchTableData(tables);
-        setMapData(data);
-      } catch (err) {
-        console.error('Error loading map data:', err);
-        setError('Failed to load map data.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, [user]);
+  // Filter data based on selected sources using useMemo
+  const filteredData = useMemo(() => {
+    if (!mapData) {
+      return [];
+    }
+    
+    // Example: Only show certain data if user is authenticated
+    const userAuthenticated = !!user;
+    const dataToFilter = userAuthenticated ? mapData : mapData.filter(item => !item.private);
+    
+    return selectedSources.length === 0
+      ? dataToFilter
+      : dataToFilter.filter(item => selectedSources.includes(item.tableSource));
+  }, [mapData, selectedSources, user]);
 
   // Handle filter changes
   const handleFilterChange = (tableName: string) => {
@@ -51,18 +40,13 @@ const MarketplaceMap: React.FC = () => {
     );
   };
 
-  // Filtered data based on selected sources
-  const filteredData = useMemo(() => {
-    if (selectedSources.length === 0) {
-      return mapData;
-    }
-    return mapData.filter((data) => selectedSources.includes(data.tableSource));
-  }, [mapData, selectedSources]);
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error loading map data</div>;
 
   return (
     <div className="relative w-full h-full">
       {/* Loading and Error States */}
-      {loading && (
+      {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-50">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
@@ -70,22 +54,40 @@ const MarketplaceMap: React.FC = () => {
       {error && (
         <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-50">
           <div className="bg-destructive text-destructive-foreground p-4 rounded-md">
-            {error}
+            {error.toString()}
           </div>
         </div>
       )}
 
       {/* Filters */}
       <FilterSidebar
-        tableSources={filterOptions}
+        tableSources={TABLES_TO_FETCH.map((table) => ({
+          name: table.label,
+          value: table.tableName
+        }))}
         selectedSources={selectedSources}
         onFilterChange={handleFilterChange}
         onClose={() => setShowSidebar(false)}
         showSidebar={showSidebar}
       />
 
-      {/* Globe */}
-      <Globe mapData={filteredData} />
+      {/* Visualization Container */}
+      <div className="flex h-full">
+        {/* Globe Container */}
+        <div className="w-1/2 h-full">
+          <Globe mapData={filteredData} />
+        </div>
+
+        {/* Map Container */}
+        <div className="w-1/2 h-full">
+          <Map 
+            className="h-full"
+            initialView={[0, 0]}
+            initialZoom={2}
+            mapData={filteredData}
+          />
+        </div>
+      </div>
     </div>
   );
 };
