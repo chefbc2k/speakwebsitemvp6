@@ -22,6 +22,9 @@ export interface TableConfig {
   label: string;
   markerColor: string;
   isPublic: boolean;
+  private?: boolean;
+  latitude: number;
+  longitude: number;
 }
 
 // Define the tables configuration with explicit typing
@@ -32,6 +35,8 @@ export const TABLES_TO_FETCH: TableConfig[] = [
     label: 'Voice Artists',
     markerColor: MAP_THEME.light.markerColor,
     isPublic: true,
+    latitude: 0,
+    longitude: 0
   },
   {
     tableName: 'uservoicetraits',
@@ -39,6 +44,8 @@ export const TABLES_TO_FETCH: TableConfig[] = [
     label: 'Voice Traits',
     markerColor: MAP_THEME.dark.markerColor,
     isPublic: true,
+    latitude: 0,
+    longitude: 0
   },
   {
     tableName: 'usertimezones',
@@ -46,6 +53,8 @@ export const TABLES_TO_FETCH: TableConfig[] = [
     label: 'Timezones',
     markerColor: '#44FF44',
     isPublic: true,
+    latitude: 0,
+    longitude: 0
   },
 ];
 
@@ -76,6 +85,7 @@ type JoinedUserData = {
 };
 
 export interface MapData {
+  private: boolean;
   latitude: number;
   longitude: number;
   rawData: JoinedUserData;
@@ -146,6 +156,7 @@ export const fetchTableData = async (tables: TableConfig[]): Promise<MapData[]> 
       }
 
       const processedData = data.map((item) => ({
+        private: false,
         latitude: parseFloat(item.geo_location?.split(',')[0] || '0'),
         longitude: parseFloat(item.geo_location?.split(',')[1] || '0'),
         rawData: item,

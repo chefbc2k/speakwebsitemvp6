@@ -33,11 +33,13 @@ export const MAP_THEME = {
 export const getVisibleTables = (isAuthenticated: boolean, tablesToFetch?: TableConfig[]): TableConfig[] => {
   const defaultTables: TableConfig[] = [
     {
-      tableName: 'users', 
+      tableName: 'users',
       displayFields: ['user_id', 'username', 'geo_location', 'created_at'],
       label: 'Voice Artists',
       markerColor: MAP_THEME.light.markerColor,
       isPublic: true,
+      latitude: 0,
+      longitude: 0
     },
     {
       tableName: 'uservoicetraits',
@@ -45,6 +47,8 @@ export const getVisibleTables = (isAuthenticated: boolean, tablesToFetch?: Table
       label: 'Voice Traits',
       markerColor: MAP_THEME.dark.markerColor,
       isPublic: true,
+      latitude: 0,
+      longitude: 0
     },
     {
       tableName: 'usertimezones',
@@ -52,6 +56,8 @@ export const getVisibleTables = (isAuthenticated: boolean, tablesToFetch?: Table
       label: 'Timezones',
       markerColor: '#44FF44',
       isPublic: true,
+      latitude: 0,
+      longitude: 0
     },
   ];
 

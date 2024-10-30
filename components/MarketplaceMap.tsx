@@ -41,7 +41,7 @@ const MarketplaceMap: React.FC = () => {
   };
 
   if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error loading map data</div>;
+  if (error) return <div>Error loading map data: {(error as Error).message}</div>;
 
   return (
     <div className="relative w-full h-full">
@@ -54,7 +54,7 @@ const MarketplaceMap: React.FC = () => {
       {error && (
         <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-50">
           <div className="bg-destructive text-destructive-foreground p-4 rounded-md">
-            {error.toString()}
+            {(error as Error).message}
           </div>
         </div>
       )}
