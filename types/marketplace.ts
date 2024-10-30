@@ -1,26 +1,34 @@
-export interface NFTLocation {
-  id: number;
+export interface VoiceLocation {
+  accuracy: number | null;
+  captured_at: string;
+  device_info: string | null;
+  ip_address: unknown;
   latitude: number;
+  location_id: string;
   longitude: number;
-  title: string;
-  artist: string;
-  price: number;
-  image: string;
-  region: string;
-  voiceType: string;
-  accent: string;
-  culturalBackground: string;
-  language: string;
-  ageRange: string;
-  gender: string;
-  voiceStyle: string;
-  experienceLevel: string;
-  rating: number;
-  availability: string;
-  recordingQuality: string;
-  specialization: string;
-  projectType: string;
+  user_id: string;
+  voice_clip_id: string;
+  voice_clips: {
+    name: string;
+    description: string;
+    user_id: string;
+    voices: {
+      name: string;
+      description: string;
+      voicecategories: {
+        categories: {
+          // Add properties of categories here
+        }[];
+      }[];
+      voicelanguages: {
+        languages: {
+          // Add properties of languages here
+        }[];
+      }[];
+    }[];
+  };
 }
+
 
 export interface FilterState {
   region: Record<string, boolean>;

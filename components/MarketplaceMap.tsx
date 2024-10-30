@@ -1,187 +1,97 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import Map, { NavigationControl, MapRef } from 'react-map-gl';
-import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { ChevronRight } from 'lucide-react';
-import FilterSidebar from './marketplace/FilterSidebar';
-import NFTMarker from './marketplace/NFTMarker';
-import type { NFTLocation, FilterState } from '@/types/marketplace';
-import { filterCategories } from '@/lib/marketplace-constants';
-
-// Initialize filter state
-const initializeFilterState = (): FilterState => {
-  const filterState = filterCategories.reduce((acc, category) => {
-    if (category.id === 'priceRange') {
-      return { ...acc, [category.id]: [0, 10] };
-    }
-    return {
-      ...acc,
-      [category.id]: category.options.reduce(
-        (subAcc, option) => ({ ...subAcc, [option.value]: false }),
-        {}
-      )
-    };
-  }, {} as FilterState);
-
-  // Try to load saved preferences
-  if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem('marketplaceFilters');
-    if (saved) {
-      return JSON.parse(saved);
-    }
-  }
-
-  return filterState;
-};
-
-const INITIAL_VIEW_STATE = {
-  latitude: 0,
-  longitude: 0,
-  zoom: 2,
-  bearing: 0,
-  pitch: 0
-};
+import { useEffect, useState } from 'react';
+import Map, { Marker, Popup } from 'react-map-gl';
+import { 
+  MAP_STYLE, 
+  INITIAL_VIEW_STATE,
+  MAPBOX_TOKEN,
+  MAP_THEME,
+  type VoiceLocation,
+  getVoiceClipLocations // Updated import
+} from '@/lib/marketplace-constants';
+import { useTheme } from 'next-themes';
+import { Mic } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 export default function MarketplaceMap() {
-  const mapRef = useRef<MapRef | null>(null);
-  const [viewState, setViewState] = useState(INITIAL_VIEW_STATE);
-  const [selectedNFT, setSelectedNFT] = useState<NFTLocation | null>(null);
-  const [showSidebar, setShowSidebar] = useState(true);
-  const [filters, setFilters] = useState<FilterState>(initializeFilterState);
-  const [locations, setLocations] = useState<NFTLocation[]>([]);
-  const [filteredLocations, setFilteredLocations] = useState<NFTLocation[]>([]);
-  const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const [locations, setLocations] = useState<VoiceLocation[]>([]);
+  const [selectedLocation, setSelectedLocation] = useState<VoiceLocation | null>(null);
+  const { theme } = useTheme();
+  const currentTheme = MAP_THEME[theme as keyof typeof MAP_THEME] || MAP_THEME.light;
 
-  // Fetch locations (simulated)
   useEffect(() => {
-    // In a real app, this would be an API call
-    const fetchLocations = async () => {
-      // Simulated data
-      const data: NFTLocation[] = [
-        {
-          id: 1,
-          latitude: 40.7128,
-          longitude: -74.006,
-          title: "NYC Voice Collection",
-          artist: "VoiceArtist1",
-          price: 0.5,
-          image: "https://picsum.photos/seed/nyc/200/200",
-          region: "northAmerica",
-          voiceType: "bass",
-          accent: "american",
-          culturalBackground: "western",
-          language: "english",
-          ageRange: "adult",
-          gender: "male",
-          voiceStyle: "jazz",
-          experienceLevel: "expert",
-          rating: 5,
-          availability: "immediate",
-          recordingQuality: "studio",
-          specialization: "audiobooks",
-          projectType: "longForm"
-        },
-        // Add more sample data here
-      ];
-      setLocations(data);
-      setFilteredLocations(data);
-    };
+// sourcery skip: avoid-function-declarations-in-blocks
+    async function loadLocations() {
+      try {
+        const data = await getVoiceClipLocations(); // Updated function call
+        setLocations(data);
+      } catch (error) {
+        console.error('Error loading voice clip locations:', error);
+      }
+    }
 
-    fetchLocations();
+    loadLocations();
   }, []);
 
-  const applyFilters = useCallback(() => {
-    const filtered = locations.filter(nft => {
-      // Check each filter category
-      const matchesRegion = !Object.values(filters.region).some(v => v) ||
-        filters.region[nft.region];
-      const matchesVoiceType = !Object.values(filters.voiceType).some(v => v) ||
-        filters.voiceType[nft.voiceType.toLowerCase()];
-      const matchesAccent = !Object.values(filters.accent).some(v => v) ||
-        filters.accent[nft.accent];
-      const matchesCulture = !Object.values(filters.culturalBackground).some(v => v) ||
-        filters.culturalBackground[nft.culturalBackground];
-      const matchesLanguage = !Object.values(filters.language).some(v => v) ||
-        filters.language[nft.language];
-      const matchesAge = !Object.values(filters.ageRange).some(v => v) ||
-        filters.ageRange[nft.ageRange];
-      const matchesGender = !Object.values(filters.gender).some(v => v) ||
-        filters.gender[nft.gender];
-      const matchesStyle = !Object.values(filters.voiceStyle).some(v => v) ||
-        filters.voiceStyle[nft.voiceStyle.toLowerCase()];
-      const matchesExperience = !Object.values(filters.experienceLevel).some(v => v) ||
-        filters.experienceLevel[nft.experienceLevel];
-      const matchesPrice = nft.price >= filters.priceRange[0] && nft.price <= filters.priceRange[1];
-      const matchesQuality = !Object.values(filters.recordingQuality).some(v => v) ||
-        filters.recordingQuality[nft.recordingQuality];
-      const matchesSpecialization = !Object.values(filters.specialization).some(v => v) ||
-        filters.specialization[nft.specialization];
-      const matchesProjectType = !Object.values(filters.projectType).some(v => v) ||
-        filters.projectType[nft.projectType];
-
-      return (
-        matchesRegion && matchesVoiceType && matchesAccent && matchesCulture &&
-        matchesLanguage && matchesAge && matchesGender && matchesStyle &&
-        matchesExperience && matchesPrice && matchesQuality &&
-        matchesSpecialization && matchesProjectType
-      );
-    });
-
-    setFilteredLocations(filtered);
-  }, [filters, locations]);
-
-  useEffect(() => {
-    applyFilters();
-  }, [filters, applyFilters]);
-
-  const handleMapLoad = () => {
-    setIsMapLoaded(true);
-  };
-
-  if (typeof window === 'undefined') return null;
-
   return (
-    <div className="relative h-[calc(100vh-4rem)]">
-      <FilterSidebar
-        filters={filters}
-        onFilterChange={setFilters}
-        onClose={() => setShowSidebar(false)}
-        showSidebar={showSidebar}
-      />
-
-      {!showSidebar && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="absolute top-4 left-4 z-10 bg-white dark:bg-gray-900"
-          onClick={() => setShowSidebar(true)}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      )}
-
+    <div className="w-full h-[400px] rounded-lg overflow-hidden">
       <Map
-        ref={mapRef}
-        {...viewState}
-        onMove={evt => setViewState(evt.viewState)}
-        onLoad={handleMapLoad}
+        mapboxAccessToken={MAPBOX_TOKEN}
+        initialViewState={INITIAL_VIEW_STATE}
         style={{ width: '100%', height: '100%' }}
-        mapStyle="mapbox://styles/mapbox/dark-v10"
-        mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
+        mapStyle={MAP_STYLE}
       >
-        <NavigationControl />
-        
-        {isMapLoaded && filteredLocations.map(nft => (
-          <NFTMarker
-            key={nft.id}
-            nft={nft}
-            isSelected={selectedNFT?.id === nft.id}
-            onClick={() => setSelectedNFT(nft)}
-            onClose={() => setSelectedNFT(null)}
-          />
+        {locations.map((location) => (
+          <Marker
+            key={location.location_id}
+            latitude={location.latitude}
+            longitude={location.longitude}
+            onClick={(e) => {
+              e.originalEvent.stopPropagation();
+              setSelectedLocation(location);
+            }}
+          >
+            <Mic className="w-6 h-6 text-primary cursor-pointer" />
+          </Marker>
         ))}
+
+        {selectedLocation && (
+          <Popup
+            latitude={selectedLocation.latitude}
+            longitude={selectedLocation.longitude}
+            onClose={() => setSelectedLocation(null)}
+            closeButton={true}
+            closeOnClick={false}
+            className="bg-background"
+          >
+            <div className="p-2">
+              <h3 className="font-semibold">{selectedLocation.voice_clips.name}</h3>
+              <p className="text-sm text-muted-foreground">
+                {selectedLocation.voice_clips.description}
+              </p>
+              <div className="flex flex-wrap gap-1 mt-2">
+                {selectedLocation.voice_clips.voices.voicecategories.map(({ categories }) => (
+                  <Badge key={categories.category_id} variant="secondary">
+                    {categories.name}
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {selectedLocation.voice_clips.voices.voicelanguages.map(({ languages }) => (
+                  <Badge key={languages.language_id} variant="outline">
+                    {languages.name}
+                  </Badge>
+                ))}
+              </div>
+              {selectedLocation.accuracy && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Accuracy: {selectedLocation.accuracy}m
+                </p>
+              )}
+            </div>
+          </Popup>
+        )}
       </Map>
     </div>
   );
