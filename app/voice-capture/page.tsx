@@ -21,7 +21,7 @@ import WaveSurfer from 'wavesurfer.js';
 import { useAuth } from '@/contexts/AuthContext';
 import dynamic from 'next/dynamic';
 
-const Microphone3D = dynamic(() => import('@/components/Microphone3D'), {
+const Microphone3D = dynamic(() => import('@/components/music/Microphone3D'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-[400px] flex items-center justify-center bg-gray-900 rounded-lg">

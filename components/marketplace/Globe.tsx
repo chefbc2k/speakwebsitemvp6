@@ -1,6 +1,6 @@
 // src/components/Globe.tsx
 
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
@@ -11,7 +11,8 @@ interface GlobeProps {
   mapData: MapData[];
 }
 
-const Globe: React.FC<GlobeProps> = ({ mapData }) => {
+// New Earth component that handles rotation
+const Earth = ({ mapData }: { mapData: MapData[] }) => {
   const earthRef = useRef<THREE.Mesh>(null!);
 
   // Load Earth textures
@@ -31,15 +32,7 @@ const Globe: React.FC<GlobeProps> = ({ mapData }) => {
   });
 
   return (
-    <Canvas style={{ height: '100vh', width: '100vw' }}>
-      {/* Lighting */}
-      <ambientLight intensity={0.5} />
-      <pointLight position={[10, 10, 10]} />
-
-      {/* Stars in the background */}
-      <Stars radius={300} depth={50} count={10000} factor={7} saturation={0} fade />
-
-      {/* Earth Sphere */}
+    <>
       <mesh ref={earthRef}>
         <sphereGeometry args={[1, 64, 64]} />
         <meshPhongMaterial
@@ -50,11 +43,28 @@ const Globe: React.FC<GlobeProps> = ({ mapData }) => {
           specular={new THREE.Color('gray')}
         />
       </mesh>
-
+      
       {/* Markers */}
       {mapData.map((data, index) => (
         <Marker key={index} data={data} />
       ))}
+    </>
+  );
+};
+
+// Main Globe component
+const Globe: React.FC<GlobeProps> = ({ mapData }) => {
+  return (
+    <Canvas style={{ height: '100vh', width: '100vw' }}>
+      {/* Lighting */}
+      <ambientLight intensity={0.5} />
+      <pointLight position={[10, 10, 10]} />
+
+      {/* Stars in the background */}
+      <Stars radius={300} depth={50} count={10000} factor={7} saturation={0} fade />
+
+      {/* Earth with rotation */}
+      <Earth mapData={mapData} />
 
       {/* Orbit Controls */}
       <OrbitControls enableZoom={true} />

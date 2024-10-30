@@ -8,10 +8,15 @@ import { ChevronLeft } from 'lucide-react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { MapData, TABLES_TO_FETCH, TableConfig } from '@/lib/map-data-utils';
 
+interface FilterOption {
+  name: string;
+  value: string;
+}
+
 interface FilterSidebarProps {
-  tableSources: TableConfig[];
+  tableSources: FilterOption[];
   selectedSources: string[];
-  onFilterChange: (tableName: string) => void;
+  onFilterChange: (source: string) => void;
   onClose?: () => void;
   showSidebar?: boolean;
 }
@@ -23,14 +28,14 @@ export default function FilterSidebar({
   onClose,
   showSidebar
 }: FilterSidebarProps) {
-  const handleFilterChange = (tableName: string) => {
-    onFilterChange(tableName);
+  const handleFilterChange = (source: string) => {
+    onFilterChange(source);
   };
 
   const clearFilters = () => {
     tableSources.forEach(table => {
-      if (selectedSources.includes(table.tableName)) {
-        onFilterChange(table.tableName);
+      if (selectedSources.includes(table.name)) {
+        onFilterChange(table.name);
       }
     });
   };
@@ -57,17 +62,17 @@ export default function FilterSidebar({
       <ScrollArea className="h-[calc(100%-8rem)] p-4">
         <div className="space-y-4">
           {tableSources.map((table) => (
-            <div key={table.tableName} className="flex items-center space-x-2">
+            <div key={table.name} className="flex items-center space-x-2">
               <Checkbox
-                id={table.tableName}
-                checked={selectedSources.includes(table.tableName)}
-                onCheckedChange={() => handleFilterChange(table.tableName)}
+                id={table.name}
+                checked={selectedSources.includes(table.name)}
+                onCheckedChange={() => handleFilterChange(table.name)}
               />
               <Label
-                htmlFor={table.tableName}
+                htmlFor={table.name}
                 className="text-sm font-normal"
               >
-                {table.label || table.tableName}
+                {table.name}
               </Label>
             </div>
           ))}

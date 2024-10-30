@@ -7,45 +7,23 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
+// Get the Tables type from Database
 type Tables = Database['public']['Tables'];
-type TableNames = keyof Tables;
 
-// Helper type to get row type for a specific table
-type TableRow<T extends TableNames> = Tables[T]['Row'];
+// Define the specific tables we want to use
+export type ValidTableName = 'users' | 'uservoicetraits' | 'usertimezones';
 
-// Define a union type of the specific tables we're using
-type ValidTables = 'users' | 'uservoicetraits' | 'usertimezones';
+// Define the TableConfig type with strict typing
+export interface TableConfig {
+  tableName: ValidTableName;
+  displayFields: readonly string[];  // Changed to readonly
+  label: string;
+  markerColor: string;
+  isPublic: boolean;
+}
 
-// Create a type for each specific table configuration
-type TableConfigMap = {
-  users: {
-    tableName: 'users';
-    displayFields: Array<keyof Tables['users']['Row']>;
-    label: string;
-    markerColor: string;
-    isPublic: boolean;
-  };
-  uservoicetraits: {
-    tableName: 'uservoicetraits';
-    displayFields: Array<keyof Tables['uservoicetraits']['Row']>;
-    label: string;
-    markerColor: string;
-    isPublic: boolean;
-  };
-  usertimezones: {
-    tableName: 'usertimezones';
-    displayFields: Array<keyof Tables['usertimezones']['Row']>;
-    label: string;
-    markerColor: string;
-    isPublic: boolean;
-  };
-};
-
-// Union type of all possible table configurations
-export type TableConfig = TableConfigMap[ValidTables];
-
-// Define tables with proper typing
-export const TABLES_TO_FETCH: readonly TableConfig[] = [
+// Define the tables configuration with explicit typing
+export const TABLES_TO_FETCH: TableConfig[] = [
   {
     tableName: 'users',
     displayFields: ['user_id', 'username', 'geo_location', 'created_at'],
@@ -67,7 +45,7 @@ export const TABLES_TO_FETCH: readonly TableConfig[] = [
     markerColor: '#44FF44',
     isPublic: true,
   },
-] as const;
+];
 
 // Define the type for joined user data
 type JoinedUserData = {
@@ -87,13 +65,19 @@ type JoinedUserData = {
       name: string;
     };
   }>;
+  // Optional NFT-related fields
+  artist?: string;
+  name?: string;
+  image?: string;
+  price?: string;
+  endTime?: string;
 };
 
 export interface MapData {
   latitude: number;
   longitude: number;
   rawData: JoinedUserData;
-  tableSource: TableNames;
+  tableSource: ValidTableName;
   markerColor: string;
   label: string;
   popupContent?: ReactNode;
@@ -185,7 +169,7 @@ export const fetchTableData = async (tables: TableConfig[]): Promise<MapData[]> 
   return allMapData;
 };
 
-const applyFilterConditions = <T extends TableNames>(
+const applyFilterConditions = <T extends ValidTableName>(
   query: any,
   conditions: Partial<Tables[T]['Row']>
 ) => {
@@ -196,6 +180,7 @@ const applyFilterConditions = <T extends TableNames>(
   return modifiedQuery;
 };
 
+// Helper function to get visible tables
 export const getVisibleTables = (isAuthenticated: boolean): TableConfig[] => {
-  return TABLES_TO_FETCH.filter(table => isAuthenticated || table.isPublic);
+  return TABLES_TO_FETCH.filter(table => table.isPublic || isAuthenticated);
 };

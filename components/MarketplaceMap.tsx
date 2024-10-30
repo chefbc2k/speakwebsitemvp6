@@ -15,6 +15,14 @@ const MarketplaceMap: React.FC = () => {
   const [showSidebar, setShowSidebar] = useState(true);
   const user = useUser();
 
+  // Transform TableConfig[] to FilterOption[]
+  const filterOptions = useMemo(() => {
+    return TABLES_TO_FETCH.map((table) => ({
+      name: table.label,
+      value: table.tableName
+    }));
+  }, []);
+
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
@@ -69,7 +77,7 @@ const MarketplaceMap: React.FC = () => {
 
       {/* Filters */}
       <FilterSidebar
-        tableSources={TABLES_TO_FETCH}
+        tableSources={filterOptions}
         selectedSources={selectedSources}
         onFilterChange={handleFilterChange}
         onClose={() => setShowSidebar(false)}

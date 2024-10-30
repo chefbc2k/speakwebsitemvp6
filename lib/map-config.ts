@@ -1,14 +1,5 @@
 // src/lib/map-config.ts
-
-// Define and export the TableConfig type
-export type TableConfig = {
-  tableName: string;
-  displayFields: readonly string[];
-  label: string;
-  markerColor: string;
-  isPublic: boolean;
-  filterConditions?: Record<string, any>;
-};
+import { TableConfig, TABLES_TO_FETCH } from './map-data-utils';
 
 // Initial View State for the Map
 export const INITIAL_VIEW_STATE = {
@@ -35,39 +26,34 @@ export const MAP_THEME = {
   dark: {
     backgroundColor: '#1a1a1a',
     textColor: '#ffffff',
-    markerColor: '#3b82f6',
+    markerColor: '#1e293b',
   },
 } as const;
-
-// Configuration for Tables to Fetch
-export const TABLES_TO_FETCH: TableConfig[] = [
-  {
-    tableName: 'voice_clip_locations',
-    displayFields: ['voice_clip_id', 'accuracy', 'latitude', 'longitude', 'location_id'] as const,
-    label: 'Voice Clip Location',
-    markerColor: '#FF4444', // Red marker for voice clip locations
-    isPublic: true,
-  },
-  {
-    tableName: 'voice_clips',
-    displayFields: ['name', 'description', 'voice_id', 'created_at'] as const,
-    label: 'Voice Clip',
-    markerColor: '#4444FF', // Blue marker for voice clips
-    isPublic: true,
-    filterConditions: {
-      is_published: true, // Only show published clips
+// Helper function to get visible tables
+export const getVisibleTables = (isAuthenticated: boolean, tablesToFetch?: TableConfig[]): TableConfig[] => {
+  const defaultTables: TableConfig[] = [
+    {
+      tableName: 'users', 
+      displayFields: ['user_id', 'username', 'geo_location', 'created_at'],
+      label: 'Voice Artists',
+      markerColor: MAP_THEME.light.markerColor,
+      isPublic: true,
     },
-  },
-  {
-    tableName: 'voices',
-    displayFields: ['name', 'user_id'] as const,
-    label: 'Voice',
-    markerColor: '#44FF44', // Green marker for voices
-    isPublic: false, // Restricted to authenticated users
-  },
-] as const;
+    {
+      tableName: 'uservoicetraits',
+      displayFields: ['user_id', 'voice_trait_id'],
+      label: 'Voice Traits',
+      markerColor: MAP_THEME.dark.markerColor,
+      isPublic: true,
+    },
+    {
+      tableName: 'usertimezones',
+      displayFields: ['user_id', 'time_zone_id'],
+      label: 'Timezones',
+      markerColor: '#44FF44',
+      isPublic: true,
+    },
+  ];
 
-// Helper Function to Filter Tables Based on Authentication
-export const getVisibleTables = (isAuthenticated: boolean): TableConfig[] => {
-  return TABLES_TO_FETCH.filter(table => isAuthenticated || table.isPublic);
+  return TABLES_TO_FETCH.filter(table => table.isPublic || isAuthenticated);
 };

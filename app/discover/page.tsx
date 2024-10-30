@@ -6,7 +6,7 @@ import { useParallax } from '@/hooks/useParallax';
 import LazyImage from '@/components/LazyImage';
 import ScrollProgress from '@/components/ScrollProgress';
 import SearchFilters from '@/components/SearchFilters';
-import MusicPlayer from '@/components/MusicPlayer';
+import MusicPlayer from '@/components/music/MusicPlayer';
 import NFTCard from '@/components/NFTCard';
 import { Card } from '@/components/ui/card';
 

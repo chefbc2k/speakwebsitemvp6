@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { Providers } from '@/components/Providers';
+import { Providers } from '@/app/providers';
 import { Toaster } from '@/components/ui/toaster';
 import PageTransition from '@/components/PageTransition';
 import StickyNavigation from '@/components/StickyNavigation';
