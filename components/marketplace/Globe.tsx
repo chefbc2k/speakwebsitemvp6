@@ -1,4 +1,4 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
@@ -7,6 +7,8 @@ import Marker from '@/components/marketplace/Marker';
 
 interface GlobeProps {
   mapData: MapData[];
+  center?: [number, number];
+  zoom?: number;
 }
 
 // New Earth component that handles rotation and textures
@@ -57,7 +59,22 @@ const Earth = ({ mapData }: { mapData: MapData[] }) => {
 };
 
 // Main Globe component
-const Globe: React.FC<GlobeProps> = ({ mapData }) => {
+const Globe: React.FC<GlobeProps> = ({ mapData, center, zoom }) => {
+  const globeRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (center && zoom) {
+      // Convert Leaflet zoom to globe camera distance
+      const distance = Math.pow(2, 16 - zoom);
+      
+      globeRef.current?.pointOfView({
+        lat: center[0],
+        lng: center[1],
+        altitude: distance
+      }, 1000); // 1000ms transition duration
+    }
+  }, [center, zoom]);
+
   return (
     <div className="w-full h-full bg-[#42428f]">
       <Canvas

@@ -10,13 +10,15 @@ interface MapProps {
   initialView?: [number, number];
   initialZoom?: number;
   mapData: MapData[];
+  onViewportChange?: (center: [number, number], zoom: number) => void;
 }
 
 const MapComponent = ({
   className = '',
   initialView = [0, 0],
   initialZoom = 2,
-  mapData
+  mapData,
+  onViewportChange
 }: MapProps) => {
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
@@ -42,6 +44,11 @@ const MapComponent = ({
 
       mapRef.current = map;
       markersRef.current = L.layerGroup().addTo(map);
+
+      map.on('moveend', () => {
+        const center = map.getCenter();
+        onViewportChange?.([center.lat, center.lng], map.getZoom());
+      });
     }
 
     return () => {
